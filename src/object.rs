@@ -56,7 +56,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_read() {
+    fn test_read_commit() {
         let hash = "defb1bfe50aa14da7248cc420d2a59c97ec8356c";
         let object = Object::read(hash).unwrap();
         let mut reader = BufReader::new(object.reader);
@@ -72,5 +72,21 @@ mod tests {
         );
 
         assert_eq!(object.kind, Kind::Commit);
+    }
+
+    #[test]
+    fn test_read_blob() {
+        let hash = "ea8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba";
+        let object = Object::read(hash).unwrap();
+        let mut reader = BufReader::new(object.reader);
+
+        let mut line = String::new();
+        reader.read_to_string(&mut line).unwrap();
+        assert_eq!(
+            line,
+            "/target\n"
+        );
+
+        assert_eq!(object.kind, Kind::Blob);
     }
 }
