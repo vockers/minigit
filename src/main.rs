@@ -1,10 +1,11 @@
-mod commands;
+pub mod commands;
+pub mod object;
 
 use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use commands::init;
+use commands::{cat_file, init};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -16,18 +17,22 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    Init { directory: Option<PathBuf> }
+    Init { directory: Option<PathBuf> },
+    CatFile { object: String },
 }
 
 fn main() -> Result<()> {
-    let args = Cli::parse(); 
+    let args = Cli::parse();
 
     match args.command {
         Commands::Init { directory } => {
             init::initialize_repository(directory)?;
         }
+        Commands::CatFile { object } => {
+            // TODO: pretty print (-p)
+            cat_file::print_object(&object)?;
+        }
     }
 
     Ok(())
 }
-
