@@ -9,3 +9,4 @@ pub fn print_object(hash: &str) -> Result<()> {
 
     Ok(())
 }
+

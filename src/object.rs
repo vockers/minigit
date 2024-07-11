@@ -7,6 +7,7 @@ use std::{
 use anyhow::{Context, Result};
 use flate2::read::ZlibDecoder;
 
+#[derive(Debug, PartialEq)]
 pub enum Kind {
     Blob,
     Tree,
@@ -47,5 +48,33 @@ impl Object<()> {
         let reader = z.take(size);
 
         Ok(Object { kind, reader })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_read() {
+        let hash = "defb1bfe50aa14da7248cc420d2a59c97ec8356c";
+        let object = Object::read(hash).unwrap();
+        let mut reader = BufReader::new(object.reader);
+
+        let mut line = String::new();
+        reader.read_line(&mut line).unwrap();
+        reader.read_line(&mut line).unwrap();
+        reader.read_line(&mut line).unwrap();
+        reader.read_line(&mut line).unwrap();
+        reader.read_line(&mut line).unwrap();
+        assert_eq!(
+            line,
+            "tree ecabbf6e6c59d8d3d222685a369bb611803d3ce8\n\
+            author Vincent Ockers <vincentbockers@gmail.com> 1720703241 +0200\n\
+            committer Vincent Ockers <vincentbockers@gmail.com> 1720703241 +0200\n\n\
+            Implement init command\n"
+        );
+
+        assert_eq!(object.kind, Kind::Commit);
     }
 }
