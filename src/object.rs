@@ -62,11 +62,7 @@ mod tests {
         let mut reader = BufReader::new(object.reader);
 
         let mut line = String::new();
-        reader.read_line(&mut line).unwrap();
-        reader.read_line(&mut line).unwrap();
-        reader.read_line(&mut line).unwrap();
-        reader.read_line(&mut line).unwrap();
-        reader.read_line(&mut line).unwrap();
+        reader.read_to_string(&mut line).unwrap();
         assert_eq!(
             line,
             "tree ecabbf6e6c59d8d3d222685a369bb611803d3ce8\n\
