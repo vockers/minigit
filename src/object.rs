@@ -79,16 +79,15 @@ where
     R: Read,
 {
     pub fn write(mut self, writer: impl Write) -> Result<String> {
-        let mut writer = ZlibEncoder::new(writer, Compression::default());
-
-        let mut buf = Vec::new();
-        write!(buf, "{} {}\0", self.kind, self.size)?;
-        self.reader.read_to_end(&mut buf)?;
-        writer.write_all(&buf)?;
-        writer.finish()?;
-        let mut hasher = Sha1::new();
-        hasher.update(buf);
-        let hash = hasher.finalize();
+        let writer = ZlibEncoder::new(writer, Compression::default());
+        let mut writer = HashWriter {
+            writer,
+            hasher: Sha1::new(),
+        };
+        write!(writer, "{} {}\0", self.kind, self.size)?;
+        std::io::copy(&mut self.reader, &mut writer).context("stream file into blob")?;
+        writer.writer.finish()?;
+        let hash = writer.hasher.finalize();
         Ok(hex::encode(hash))
     }
 
@@ -103,6 +102,25 @@ where
         )?;
 
         Ok(hash)
+    }
+}
+
+struct HashWriter<T> {
+    writer: T,
+    hasher: Sha1,
+}
+
+impl<W> Write for HashWriter<W>
+where
+    W: Write,
+{
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.hasher.update(buf);
+        self.writer.write(buf)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.writer.flush()
     }
 }
 
