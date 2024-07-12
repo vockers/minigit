@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use commands::{cat_file, hash_object, init, ls_tree};
+use commands::{cat_file, hash_object, init, ls_tree, write_tree};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -37,6 +37,7 @@ enum Commands {
         #[clap(short, long)]
         name_only: bool,
     },
+    WriteTree {},
 }
 
 fn main() -> Result<()> {
@@ -55,6 +56,9 @@ fn main() -> Result<()> {
         }
         Commands::LsTree { treeish, name_only } => {
             ls_tree::run(&treeish, name_only)?;
+        }
+        Commands::WriteTree {} => {
+            write_tree::run()?;
         }
     }
 
