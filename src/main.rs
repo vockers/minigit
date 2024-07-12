@@ -44,17 +44,17 @@ fn main() -> Result<()> {
 
     match args.command {
         Commands::Init { directory } => {
-            init::initialize_repository(directory)?;
+            init::run(directory)?;
         }
         Commands::CatFile { object } => {
             // TODO: pretty print (-p)
-            cat_file::print_object(&object)?;
+            cat_file::run(&object)?;
         }
         Commands::HashObject { file, write } => {
-            hash_object::hash_object(&file, write)?;
+            hash_object::run(&file, write)?;
         }
         Commands::LsTree { treeish, name_only } => {
-            ls_tree::list_tree(&treeish, name_only)?;
+            ls_tree::run(&treeish, name_only)?;
         }
     }
 

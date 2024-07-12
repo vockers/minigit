@@ -2,7 +2,7 @@ use std::{env, fs, path::PathBuf};
 
 use anyhow::Result;
 
-pub fn initialize_repository(directory: Option<PathBuf>) -> Result<()> {
+pub fn run(directory: Option<PathBuf>) -> Result<()> {
     let directory = if let Some(directory) = directory {
         env::current_dir()?.join(directory)
     } else {
@@ -27,7 +27,7 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let temp_dir_path = temp_dir.path().to_path_buf();
 
-        initialize_repository(Some(temp_dir_path.clone())).unwrap();
+        run(Some(temp_dir_path.clone())).unwrap();
 
         let git_dir = temp_dir_path.join(".git");
         assert!(git_dir.exists());

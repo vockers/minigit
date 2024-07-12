@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 
 use crate::object::{Kind, Object};
 
-pub fn list_tree(hash: &str, name_only: bool) -> Result<()> {
+pub fn run(hash: &str, name_only: bool) -> Result<()> {
     let mut tree = Object::read(hash)?;
     match tree.kind {
         crate::object::Kind::Tree => {
