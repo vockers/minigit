@@ -16,6 +16,19 @@ pub enum Kind {
     Commit,
 }
 
+impl Kind {
+    pub fn from_mode(mode: u32) -> Result<Self> {
+        let mode = mode / 1000;
+        match mode {
+            100 => Ok(Kind::Blob),
+            040 => Ok(Kind::Tree),
+            120 => Ok(Kind::Blob),
+            160 => Ok(Kind::Commit),
+            _ => anyhow::bail!("Unknown mode: {}", mode),
+        }
+    }
+}
+
 impl std::fmt::Display for Kind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let kind = match self {
@@ -44,7 +57,7 @@ impl Object<()> {
     }
 
     // TODO: abbreviated hash
-    pub fn read(hash: &str) -> Result<Object<impl Read>> {
+    pub fn read(hash: &str) -> Result<Object<impl BufRead>> {
         let f = fs::File::open(format!(".git/objects/{}/{}", &hash[..2], &hash[2..]))?;
 
         let z = ZlibDecoder::new(f);

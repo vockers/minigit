@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use commands::{cat_file, hash_object, init};
+use commands::{cat_file, hash_object, init, ls_tree};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -30,6 +30,13 @@ enum Commands {
         #[clap(short)]
         write: bool,
     },
+    LsTree {
+        treeish: String,
+
+        /// List only filenames
+        #[clap(short, long)]
+        name_only: bool,
+    },
 }
 
 fn main() -> Result<()> {
@@ -45,6 +52,9 @@ fn main() -> Result<()> {
         }
         Commands::HashObject { file, write } => {
             hash_object::hash_object(&file, write)?;
+        }
+        Commands::LsTree { treeish, name_only } => {
+            ls_tree::list_tree(&treeish, name_only)?;
         }
     }
 
