@@ -2,10 +2,12 @@ use std::{
     ffi::CStr,
     fs,
     io::{prelude::*, BufReader},
+    path::PathBuf,
 };
 
 use anyhow::{Context, Result};
-use flate2::read::ZlibDecoder;
+use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
+use sha1::{Digest, Sha1};
 
 #[derive(Debug, PartialEq)]
 pub enum Kind {
@@ -14,12 +16,33 @@ pub enum Kind {
     Commit,
 }
 
+impl std::fmt::Display for Kind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let kind = match self {
+            Kind::Blob => "blob",
+            Kind::Tree => "tree",
+            Kind::Commit => "commit",
+        };
+        write!(f, "{}", kind)
+    }
+}
+
 pub struct Object<R> {
     pub kind: Kind,
+    pub size: u64,
     pub reader: R,
 }
 
 impl Object<()> {
+    pub fn blob_from_file(file: &PathBuf) -> Result<Object<impl Read>> {
+        let f = fs::File::open(file)?;
+        Ok(Object {
+            kind: Kind::Blob,
+            size: f.metadata()?.len(),
+            reader: f,
+        })
+    }
+
     // TODO: abbreviated hash
     pub fn read(hash: &str) -> Result<Object<impl Read>> {
         let f = fs::File::open(format!(".git/objects/{}/{}", &hash[..2], &hash[2..]))?;
@@ -47,7 +70,39 @@ impl Object<()> {
 
         let reader = z.take(size);
 
-        Ok(Object { kind, reader })
+        Ok(Object { kind, size, reader })
+    }
+}
+
+impl<R> Object<R>
+where
+    R: Read,
+{
+    pub fn write(mut self, writer: impl Write) -> Result<String> {
+        let mut writer = ZlibEncoder::new(writer, Compression::default());
+
+        let mut buf = Vec::new();
+        write!(buf, "{} {}\0", self.kind, self.size)?;
+        self.reader.read_to_end(&mut buf)?;
+        writer.write_all(&buf)?;
+        writer.finish()?;
+        let mut hasher = Sha1::new();
+        hasher.update(buf);
+        let hash = hasher.finalize();
+        Ok(hex::encode(hash))
+    }
+
+    pub fn write_to_objects(self) -> Result<String> {
+        let temp_file = fs::File::create(".git/objects/.temp")?;
+        let hash = self.write(temp_file)?;
+        fs::create_dir_all(format!(".git/objects/{}/", &hash[..2]))
+            .context("create subdir of .git/objects")?;
+        fs::rename(
+            ".git/objects/.temp",
+            format!(".git/objects/{}/{}", &hash[..2], &hash[2..]),
+        )?;
+
+        Ok(hash)
     }
 }
 
@@ -82,11 +137,16 @@ mod tests {
 
         let mut line = String::new();
         reader.read_to_string(&mut line).unwrap();
-        assert_eq!(
-            line,
-            "/target\n"
-        );
+        assert_eq!(line, "/target\n");
 
         assert_eq!(object.kind, Kind::Blob);
+    }
+
+    #[test]
+    fn test_get_hash_of_file() {
+        let path = PathBuf::from(".git/objects/ea/8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba");
+        let object = Object::blob_from_file(&path).unwrap();
+        let hash = Object::write(object, std::io::sink()).unwrap();
+        assert_eq!(hash, "50421f06294fa5c8578c630ec50ae9be47279d58");
     }
 }
