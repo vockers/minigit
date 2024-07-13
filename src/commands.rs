@@ -12,12 +12,11 @@ pub mod write_tree;
 
 #[derive(Subcommand)]
 pub enum Commands {
-    Init {
-        directory: Option<PathBuf>,
-    },
-    CatFile {
-        object: String,
-    },
+    /// Create an empty Git repository or reinitialize an existing one
+    Init { directory: Option<PathBuf> },
+    /// Provide contents or details of repository objects
+    CatFile { object: String },
+    /// Compute object ID and optionally create an object from a file
     HashObject {
         file: PathBuf,
 
@@ -25,6 +24,7 @@ pub enum Commands {
         #[clap(short)]
         write: bool,
     },
+    /// List the contents of a tree object
     LsTree {
         treeish: String,
 
@@ -32,7 +32,9 @@ pub enum Commands {
         #[clap(short, long)]
         name_only: bool,
     },
+    /// Create a tree object from the current index
     WriteTree {},
+    /// Create a new commit object
     CommitTree {
         tree_hash: String,
         #[clap(short)]
@@ -40,6 +42,7 @@ pub enum Commands {
         #[clap(short)]
         message: String,
     },
+    /// Record changes to the repository
     Commit {
         #[clap(short)]
         message: String,
