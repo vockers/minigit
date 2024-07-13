@@ -2,11 +2,9 @@ pub mod commands;
 pub mod object;
 pub mod repository;
 
-use std::path::PathBuf;
-
 use anyhow::Result;
-use clap::{Parser, Subcommand};
-use commands::{cat_file, hash_object, init, ls_tree, write_tree};
+use clap::Parser;
+use commands::{cat_file, hash_object, init, ls_tree, write_tree, Commands};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -14,31 +12,6 @@ use commands::{cat_file, hash_object, init, ls_tree, write_tree};
 struct Cli {
     #[command(subcommand)]
     command: Commands,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    Init {
-        directory: Option<PathBuf>,
-    },
-    CatFile {
-        object: String,
-    },
-    HashObject {
-        file: PathBuf,
-
-        /// Write the object into the object database
-        #[clap(short)]
-        write: bool,
-    },
-    LsTree {
-        treeish: String,
-
-        /// List only filenames
-        #[clap(short, long)]
-        name_only: bool,
-    },
-    WriteTree {},
 }
 
 fn main() -> Result<()> {
