@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use clap::Subcommand;
 
 pub mod cat_file;
+pub mod commit;
 pub mod commit_tree;
 pub mod hash_object;
 pub mod init;
@@ -36,6 +37,10 @@ pub enum Commands {
         tree_hash: String,
         #[clap(short)]
         parent_hash: Option<String>,
+        #[clap(short)]
+        message: String,
+    },
+    Commit {
         #[clap(short)]
         message: String,
     },
