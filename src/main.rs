@@ -4,7 +4,7 @@ pub mod repository;
 
 use anyhow::Result;
 use clap::Parser;
-use commands::{cat_file, hash_object, init, ls_tree, write_tree, Commands};
+use commands::{cat_file, commit_tree, hash_object, init, ls_tree, write_tree, Commands};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -33,6 +33,13 @@ fn main() -> Result<()> {
         }
         Commands::WriteTree {} => {
             write_tree::run()?;
+        }
+        Commands::CommitTree {
+            tree_hash,
+            parent_hash,
+            message,
+        } => {
+            commit_tree::run(&tree_hash, parent_hash.as_deref(), &message)?;
         }
     }
 
