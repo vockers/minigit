@@ -16,38 +16,38 @@ use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 use sha1::{Digest, Sha1};
 
 #[derive(Debug, PartialEq)]
-pub enum Kind {
+pub enum ObjectType {
     Blob,
     Tree,
     Commit,
 }
 
-impl Kind {
+impl ObjectType {
     pub fn from_mode(mode: u32) -> Result<Self> {
         let mode = mode / 1000;
         match mode {
-            100 => Ok(Kind::Blob),
-            040 => Ok(Kind::Tree),
-            120 => Ok(Kind::Blob),
-            160 => Ok(Kind::Commit),
+            100 => Ok(ObjectType::Blob),
+            040 => Ok(ObjectType::Tree),
+            120 => Ok(ObjectType::Blob),
+            160 => Ok(ObjectType::Commit),
             _ => anyhow::bail!("Unknown mode: {}", mode),
         }
     }
 }
 
-impl std::fmt::Display for Kind {
+impl std::fmt::Display for ObjectType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let kind = match self {
-            Kind::Blob => "blob",
-            Kind::Tree => "tree",
-            Kind::Commit => "commit",
+            ObjectType::Blob => "blob",
+            ObjectType::Tree => "tree",
+            ObjectType::Commit => "commit",
         };
         write!(f, "{}", kind)
     }
 }
 
 pub struct Object<R> {
-    pub kind: Kind,
+    pub kind: ObjectType,
     pub size: u64,
     pub reader: R,
 }
@@ -70,9 +70,9 @@ impl Object<()> {
         let (kind, size) = header.split_once(' ').context("Failed to parse header")?;
 
         let kind = match kind {
-            "blob" => Kind::Blob,
-            "tree" => Kind::Tree,
-            "commit" => Kind::Commit,
+            "blob" => ObjectType::Blob,
+            "tree" => ObjectType::Tree,
+            "commit" => ObjectType::Commit,
             _ => anyhow::bail!("Unknown object kind: {}", kind),
         };
 
@@ -154,7 +154,7 @@ mod tests {
             Implement init command\n"
         );
 
-        assert_eq!(object.kind, Kind::Commit);
+        assert_eq!(object.kind, ObjectType::Commit);
     }
 
     #[test]
@@ -167,7 +167,7 @@ mod tests {
         reader.read_to_string(&mut line).unwrap();
         assert_eq!(line, "/target\n");
 
-        assert_eq!(object.kind, Kind::Blob);
+        assert_eq!(object.kind, ObjectType::Blob);
     }
 
     #[test]

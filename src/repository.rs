@@ -4,9 +4,8 @@ use anyhow::Result;
 
 pub fn init(directory: &Path) -> Result<()> {
     let git_dir = directory.join(".git");
-    fs::create_dir(&git_dir)?;
-    fs::create_dir(git_dir.join("objects"))?;
-    fs::create_dir(git_dir.join("refs"))?;
+    fs::create_dir_all(git_dir.join("objects"))?;
+    fs::create_dir_all(git_dir.join("refs"))?;
     fs::write(git_dir.join("HEAD"), "ref: refs/heads/main\n")?;
     Ok(())
 }

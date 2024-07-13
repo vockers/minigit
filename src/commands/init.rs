@@ -10,10 +10,13 @@ pub fn run(directory: Option<PathBuf>) -> Result<()> {
     } else {
         env::current_dir()?
     };
+
     repository::init(&directory)?;
+
     println!(
         "Initialized empty Git repository in {}/.git",
         directory.display()
     );
+
     Ok(())
 }

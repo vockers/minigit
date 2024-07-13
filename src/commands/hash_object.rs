@@ -1,10 +1,10 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use anyhow::Result;
 
 use crate::object::Object;
 
-pub fn run(file: &PathBuf, write: bool) -> Result<()> {
+pub fn run(file: &Path, write: bool) -> Result<()> {
     let object = Object::blob_from_file(file)?;
 
     let hash = if write {
