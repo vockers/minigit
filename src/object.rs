@@ -1,11 +1,14 @@
+pub mod blob;
+pub mod commit;
+pub mod tree;
+
+pub use commit::write_commit;
+pub use tree::write_tree;
+
 use std::{
-    env,
     ffi::CStr,
     fs,
     io::{prelude::*, BufReader},
-    os::unix::fs::PermissionsExt,
-    path::{Path, PathBuf},
-    time::SystemTime,
 };
 
 use anyhow::{Context, Result};
@@ -50,15 +53,6 @@ pub struct Object<R> {
 }
 
 impl Object<()> {
-    pub fn blob_from_file(file: &PathBuf) -> Result<Object<impl Read>> {
-        let f = fs::File::open(file)?;
-        Ok(Object {
-            kind: Kind::Blob,
-            size: f.metadata()?.len(),
-            reader: f,
-        })
-    }
-
     // TODO: abbreviated hash
     pub fn read(hash: &str) -> Result<Object<impl BufRead>> {
         let f = fs::File::open(format!(".git/objects/{}/{}", &hash[..2], &hash[2..]))?;
@@ -140,89 +134,9 @@ where
     }
 }
 
-pub fn write_tree(path: &Path) -> Result<String> {
-    let mut entries = vec![];
-    let mut dir = fs::read_dir(path)?;
-    while let Some(entry) = dir.next() {
-        let entry = entry?;
-        let path = entry.path();
-        let name = entry.file_name().to_string_lossy().to_string();
-        if name.starts_with(".") {
-            continue;
-        }
-        let meta = entry.metadata()?;
-        let mut mode = meta.permissions().mode();
-        let hash = if meta.is_dir() {
-            // Trees don't have bits for executable permissions
-            mode = 0o40000;
-            write_tree(&path)?
-        } else {
-            Object::blob_from_file(&path)?.write_to_objects()?
-        };
-        let hash = hex::decode(&hash)?;
-        entries.push((mode, name, hash));
-    }
-    entries.sort_by(|(_, a, _), (_, b, _)| a.cmp(&b));
-    let entries: Vec<Vec<u8>> = entries
-        .into_iter()
-        .map(|(mode, name, hash)| {
-            let header = format!("{:o} {}\0", mode, name);
-            [header.as_bytes(), &hash].concat()
-        }) //"{:o} {}\0{}", mode, name, hash))
-        .collect();
-    let entries = entries.concat();
-    let object = Object {
-        kind: Kind::Tree,
-        size: entries.len() as u64,
-        reader: entries.as_slice(),
-    };
-    Ok(object.write_to_objects()?)
-}
-
-pub fn write_commit(tree_hash: &str, parent_hash: Option<&str>, message: &str) -> Result<String> {
-    use std::fmt::Write;
-    let mut commit = String::new();
-    writeln!(commit, "tree {}", tree_hash)?;
-    if let Some(parent_hash) = parent_hash {
-        writeln!(commit, "parent {}", parent_hash)?;
-    }
-    let (name, email) =
-        if let (Some(name), Some(email)) = (env::var_os("NAME"), env::var_os("EMAIL")) {
-            let name = name
-                .into_string()
-                .map_err(|_| anyhow::anyhow!("$NAME is invalid UTF-8"))?;
-            let email = email
-                .into_string()
-                .map_err(|_| anyhow::anyhow!("$EMAIL is invalid UTF-8"))?;
-            (name, email)
-        } else {
-            (
-                String::from("Vincent Ockers"),
-                String::from("vincentbockers@gmail.com"),
-            )
-        };
-    let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?;
-    writeln!(commit, "author {name} <{email}> {} +0000", time.as_secs())?;
-    writeln!(
-        commit,
-        "committer {name} <{email}> {} +0000",
-        time.as_secs()
-    )?;
-    writeln!(commit, "")?;
-    writeln!(commit, "{message}")?;
-    Object {
-        kind: Kind::Commit,
-        size: commit.len() as u64,
-        reader: commit.as_bytes(),
-    }
-    .write_to_objects()
-    .context("write commit object")
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
 
     #[test]
     fn test_read_commit() {
@@ -258,23 +172,10 @@ mod tests {
 
     #[test]
     fn test_get_hash_of_file() {
-        let path = PathBuf::from(".git/objects/ea/8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba");
+        use std::path::Path;
+        let path = Path::new(".git/objects/ea/8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba");
         let object = Object::blob_from_file(&path).unwrap();
         let hash = Object::write(object, std::io::sink()).unwrap();
         assert_eq!(hash, "50421f06294fa5c8578c630ec50ae9be47279d58");
-    }
-
-    #[test]
-    fn test_write_tree() {
-        use crate::commands::init;
-        let temp_dir = tempdir().unwrap();
-        let temp_dir_path = temp_dir.path().to_path_buf();
-        init::run(Some(temp_dir_path.clone())).unwrap();
-        let foo_dir = temp_dir_path.join("foo");
-        fs::create_dir(&foo_dir).unwrap();
-        fs::write(foo_dir.join("bar"), "Hello Test\n").unwrap();
-        fs::write(temp_dir_path.join("hello.txt"), "Hello World\n").unwrap();
-        let hash = write_tree(&temp_dir_path).unwrap();
-        assert_eq!(hash, "817795ce05795f9aa7bc8b744d2c57b2cffcf15c");
     }
 }
