@@ -1,5 +1,6 @@
 pub mod commands;
 pub mod object;
+pub mod repository;
 
 use std::path::PathBuf;
 
