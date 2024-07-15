@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = { version = "1.0.86", features = ["backtrace"] }
 clap = { version = "4.5.9", features = ["derive"] }
+colored = "2.1.0"
 flate2 = { version = "1.0.30", features = ["zlib"] }
 hex = "0.4.3"
 sha1 = "0.10.6"

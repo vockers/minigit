@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use clap::Subcommand;
 
+pub mod branch;
 pub mod cat_file;
 pub mod commit;
 pub mod commit_tree;
@@ -13,9 +14,13 @@ pub mod write_tree;
 #[derive(Subcommand)]
 pub enum Commands {
     /// Create an empty Git repository or reinitialize an existing one
-    Init { directory: Option<PathBuf> },
+    Init {
+        directory: Option<PathBuf>,
+    },
     /// Provide contents or details of repository objects
-    CatFile { object: String },
+    CatFile {
+        object: String,
+    },
     /// Compute object ID and optionally create an object from a file
     HashObject {
         file: PathBuf,
@@ -47,4 +52,5 @@ pub enum Commands {
         #[clap(short)]
         message: String,
     },
+    Branch {},
 }

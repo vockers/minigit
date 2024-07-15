@@ -4,7 +4,9 @@ pub mod repository;
 
 use anyhow::Result;
 use clap::Parser;
-use commands::{cat_file, commit, commit_tree, hash_object, init, ls_tree, write_tree, Commands};
+use commands::{
+    branch, cat_file, commit, commit_tree, hash_object, init, ls_tree, write_tree, Commands,
+};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -43,6 +45,9 @@ fn main() -> Result<()> {
         }
         Commands::Commit { message } => {
             commit::run(&message)?;
+        }
+        Commands::Branch {} => {
+            branch::run()?;
         }
     }
 
