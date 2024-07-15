@@ -46,8 +46,8 @@ fn main() -> Result<()> {
         Commands::Commit { message } => {
             commit::run(&message)?;
         }
-        Commands::Branch {} => {
-            branch::run()?;
+        Commands::Branch { all } => {
+            branch::run(all)?;
         }
     }
 

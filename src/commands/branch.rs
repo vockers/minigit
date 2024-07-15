@@ -1,30 +1,56 @@
-use std::fs;
+use std::{fs, path::Path};
 
 use anyhow::Result;
 use colored::*;
 
-pub fn run() -> Result<()> {
-    let heads_dir = fs::read_dir(".git/refs/heads")?;
-    let mut entries: Vec<String> = heads_dir
-        .filter_map(|entry| {
-            entry
-                .ok()
-                .map(|entry| entry.file_name().to_string_lossy().to_string())
-        })
-        .collect();
+fn collect_entries(path: &Path, trim_path: &str) -> Result<Vec<String>> {
+    let mut entries = Vec::new();
+    for entry in fs::read_dir(path)? {
+        let entry = entry?;
+        let entry_path = entry.path();
 
-    entries.sort();
+        if entry_path.is_dir() {
+            // Recursively collect entries from subdirectories
+            entries.extend(collect_entries(&entry_path, trim_path)?);
+        } else {
+            entries.push(
+                entry_path
+                    .to_string_lossy()
+                    .trim_start_matches(trim_path)
+                    .to_string(),
+            );
+        }
+    }
+
+    Ok(entries)
+}
+
+// TODO: write tests
+pub fn run(all: bool) -> Result<()> {
+    let heads_path = Path::new(".git/refs/heads");
+    let mut heads_entries: Vec<String> = collect_entries(heads_path, ".git/refs/heads/")?;
+    heads_entries.sort();
 
     let current_head = fs::read_to_string(".git/HEAD")?
         .trim_start_matches("ref: refs/heads/")
         .trim()
         .to_string();
 
-    for entry in entries {
+    for entry in heads_entries {
         if current_head == entry {
             println!("* {}", entry.green());
         } else {
             println!("  {}", entry);
+        }
+    }
+
+    let remotes_path = Path::new(".git/refs/remotes");
+    if all && remotes_path.exists() {
+        let mut remotes_entries: Vec<String> = collect_entries(remotes_path, ".git/refs/")?;
+        remotes_entries.sort();
+
+        for entry in remotes_entries {
+            println!("  {}", entry.red());
         }
     }
 
