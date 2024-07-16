@@ -5,7 +5,8 @@ pub mod repository;
 use anyhow::Result;
 use clap::Parser;
 use commands::{
-    branch, cat_file, commit, commit_tree, hash_object, init, ls_tree, write_tree, Commands,
+    branch, cat_file, checkout, commit, commit_tree, hash_object, init, ls_tree, write_tree,
+    Commands,
 };
 
 #[derive(Parser)]
@@ -48,6 +49,12 @@ fn main() -> Result<()> {
         }
         Commands::Branch { all } => {
             branch::run(all)?;
+        }
+        Commands::Checkout {
+            create_branch,
+            branch,
+        } => {
+            checkout::run(create_branch, &branch)?;
         }
     }
 

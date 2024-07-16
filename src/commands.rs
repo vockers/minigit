@@ -4,6 +4,7 @@ use clap::Subcommand;
 
 pub mod branch;
 pub mod cat_file;
+pub mod checkout;
 pub mod commit;
 pub mod commit_tree;
 pub mod hash_object;
@@ -53,5 +54,12 @@ pub enum Commands {
         /// list both remote-tracking and local branche
         #[clap(short)]
         all: bool,
+    },
+    /// Switch branches
+    Checkout {
+        /// create and checkout a new branch
+        #[clap(short = 'b')]
+        create_branch: bool,
+        branch: String,
     },
 }
