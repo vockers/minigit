@@ -2,6 +2,8 @@ use std::{fs, path::Path};
 
 use anyhow::{Context, Result};
 
+use crate::repository;
+
 // TODO: support detached HEAD
 // TODO: branches in subdirectories
 // TODO: write tests
@@ -33,9 +35,7 @@ pub fn run(create_branch: bool, branch: &str) -> Result<()> {
         println!("Switched to branch '{}'", branch);
     }
 
-    // Update HEAD to reference the new branch
-    let branch_ref = format!("ref: refs/heads/{}\n", branch);
-    fs::write(git_dir.join("HEAD"), branch_ref).context("write HEAD")?;
+    repository::switch_branch(branch)?;
 
     return Ok(());
 }

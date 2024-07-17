@@ -1,12 +1,21 @@
 use std::{fs, path::Path};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 pub fn init(directory: &Path) -> Result<()> {
     let git_dir = directory.join(".git");
     fs::create_dir_all(git_dir.join("objects"))?;
     fs::create_dir_all(git_dir.join("refs"))?;
     fs::write(git_dir.join("HEAD"), "ref: refs/heads/main\n")?;
+    Ok(())
+}
+
+pub fn switch_branch(branch: &str) -> Result<()> {
+    let git_dir = Path::new(".git");
+    // Update HEAD to reference the new branch
+    let branch_ref = format!("ref: refs/heads/{}\n", branch);
+    fs::write(git_dir.join("HEAD"), branch_ref).context("write HEAD")?;
+
     Ok(())
 }
 
