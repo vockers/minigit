@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use anyhow::Result;
 use clap::Subcommand;
 
 pub mod branch;
@@ -62,4 +63,46 @@ pub enum Commands {
         create_branch: bool,
         branch: String,
     },
+}
+
+pub fn run(command: Commands) -> Result<()> {
+    match command {
+        Commands::Init { directory } => {
+            init::run(directory)?;
+        }
+        Commands::CatFile { object } => {
+            // TODO: pretty print (-p)
+            cat_file::run(&object)?;
+        }
+        Commands::HashObject { file, write } => {
+            hash_object::run(&file, write)?;
+        }
+        Commands::LsTree { treeish, name_only } => {
+            ls_tree::run(&treeish, name_only)?;
+        }
+        Commands::WriteTree {} => {
+            write_tree::run()?;
+        }
+        Commands::CommitTree {
+            tree_hash,
+            parent_hash,
+            message,
+        } => {
+            commit_tree::run(&tree_hash, parent_hash.as_deref(), &message)?;
+        }
+        Commands::Commit { message } => {
+            commit::run(&message)?;
+        }
+        Commands::Branch { all } => {
+            branch::run(all)?;
+        }
+        Commands::Checkout {
+            create_branch,
+            branch,
+        } => {
+            checkout::run(create_branch, &branch)?;
+        }
+    }
+
+    Ok(())
 }
