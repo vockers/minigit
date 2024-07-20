@@ -1,9 +1,11 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum GitError {
-    #[error("Branch '{0}' not found")]
+pub enum Error {
+    #[error("branch '{0}' not found")]
     BranchNotFound(String),
-    #[error("A branch named '{0}' already exists")]
+    #[error("a branch named '{0}' already exists")]
     BranchAlreadyExists(String),
+    #[error("object with hash '{0}' not found")]
+    ObjectNotFound(String),
 }

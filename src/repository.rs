@@ -2,7 +2,7 @@ use std::{fs, path::Path};
 
 use anyhow::{Context, Result};
 
-use crate::error::GitError;
+use crate::error::Error;
 
 pub fn init(directory: &Path) -> Result<()> {
     let git_dir = directory.join(".git");
@@ -17,7 +17,7 @@ pub fn create_branch(branch: &str) -> Result<()> {
     let git_dir = Path::new(".git");
 
     if branch_exists(branch)? {
-        Err(GitError::BranchAlreadyExists(branch.to_string()))?;
+        Err(Error::BranchAlreadyExists(branch.to_string()))?;
     }
 
     // Get the commit of the current HEAD and write it to the new branch
@@ -36,7 +36,7 @@ pub fn switch_branch(branch: &str) -> Result<()> {
     let git_dir = Path::new(".git");
 
     if !branch_exists(branch)? {
-        Err(GitError::BranchNotFound(branch.to_string()))?;
+        Err(Error::BranchNotFound(branch.to_string()))?;
     }
     // Update HEAD to reference the new branch
     let branch_ref = format!("ref: refs/heads/{}\n", branch);

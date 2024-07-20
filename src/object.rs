@@ -15,6 +15,8 @@ use anyhow::{Context, Result};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 use sha1::{Digest, Sha1};
 
+use crate::error::Error;
+
 #[derive(Debug, PartialEq)]
 pub enum ObjectType {
     Blob,
@@ -55,7 +57,8 @@ pub struct Object<R> {
 impl Object<()> {
     // TODO: abbreviated hash
     pub fn read(hash: &str) -> Result<Object<impl BufRead>> {
-        let f = fs::File::open(format!(".git/objects/{}/{}", &hash[..2], &hash[2..]))?;
+        let object_path = format!(".git/objects/{}/{}", &hash[..2], &hash[2..]);
+        let f = fs::File::open(object_path).map_err(|_| Error::ObjectNotFound(hash.to_string()))?;
 
         let z = ZlibDecoder::new(f);
         let mut z = BufReader::new(z);
