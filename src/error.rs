@@ -8,4 +8,6 @@ pub enum Error {
     BranchAlreadyExists(String),
     #[error("object with hash '{0}' not found")]
     ObjectNotFound(String),
+    #[error("not a git repository")]
+    NotGitRepository,
 }

@@ -2,7 +2,7 @@ use std::{env, path::PathBuf};
 
 use anyhow::Result;
 
-use crate::repository;
+use crate::repository::Repository;
 
 pub fn run(directory: Option<PathBuf>) -> Result<()> {
     let directory = if let Some(directory) = directory {
@@ -11,7 +11,7 @@ pub fn run(directory: Option<PathBuf>) -> Result<()> {
         env::current_dir()?
     };
 
-    repository::init(&directory)?;
+    Repository::init(&directory)?;
 
     println!(
         "Initialized empty Git repository in {}/.git",
