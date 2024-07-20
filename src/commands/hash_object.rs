@@ -1,11 +1,11 @@
 use std::path::Path;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use crate::object::Object;
 
 pub fn run(file: &Path, write: bool) -> Result<()> {
-    let object = Object::blob_from_file(file)?;
+    let object = Object::blob_from_file(file).context("failed to hash file")?;
 
     let hash = if write {
         object.write_to_objects()?
