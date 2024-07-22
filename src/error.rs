@@ -10,4 +10,6 @@ pub enum Error {
     ObjectNotFound(String),
     #[error("not a git repository")]
     NotGitRepository,
+    #[error("repository already initialized")]
+    AlreadyInitialized,
 }

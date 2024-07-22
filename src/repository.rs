@@ -24,14 +24,15 @@ impl Repository {
 
     /// Initializes a new Git repository at the given directory.
     pub fn init(directory: &Path) -> Result<Repository> {
-        let git_dir = directory.join(".git");
-        fs::create_dir_all(git_dir.join("objects"))?;
-        fs::create_dir_all(git_dir.join("refs"))?;
-        fs::write(git_dir.join("HEAD"), "ref: refs/heads/main\n")?;
+        let dir = directory.join(".git");
+        if dir.exists() {
+            Err(Error::AlreadyInitialized)?;
+        }
+        fs::create_dir_all(dir.join("objects"))?;
+        fs::create_dir_all(dir.join("refs"))?;
+        fs::write(dir.join("HEAD"), "ref: refs/heads/main\n")?;
 
-        Ok(Repository {
-            dir: git_dir.to_path_buf(),
-        })
+        Ok(Repository { dir })
     }
 
     /// Creates a new branch with the given name.
@@ -67,7 +68,8 @@ impl Repository {
 
     /// Checks if a branch with the given name exists.
     pub fn branch_exists(&self, branch: &str) -> Result<bool> {
-        Ok(fs::read_dir(self.dir.join("refs/heads"))?
+        Ok(fs::read_dir(self.dir.join("refs/heads"))
+            .context("read branches")?
             .filter_map(Result::ok)
             .any(|entry| entry.file_name() == branch))
     }
