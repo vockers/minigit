@@ -1,14 +1,19 @@
 use std::{
     ffi::CStr,
     io::{BufRead, Read},
+    path::Path,
 };
 
 use anyhow::{bail, Context, Result};
 
-use crate::object::{Object, ObjectType};
+use crate::{
+    object::{Object, ObjectType},
+    repository::Repository,
+};
 
 pub fn run(hash: &str, name_only: bool) -> Result<()> {
-    let mut tree = Object::read(hash)?;
+    let repo = Repository::from_path(Path::new("."))?;
+    let mut tree = Object::read(hash, &repo)?;
     if tree.kind != ObjectType::Tree {
         bail!("Not a tree object");
     }

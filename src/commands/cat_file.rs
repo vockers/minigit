@@ -1,9 +1,12 @@
+use std::path::Path;
+
 use anyhow::Result;
 
-use crate::object::Object;
+use crate::{object::Object, repository::Repository};
 
 pub fn run(hash: &str) -> Result<()> {
-    let mut object = Object::read(hash)?;
+    let repo = Repository::from_path(Path::new("."))?;
+    let mut object = Object::read(hash, &repo)?;
 
     std::io::copy(&mut object.reader, &mut std::io::stdout())?;
 

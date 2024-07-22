@@ -8,7 +8,7 @@ use crate::repository::Repository;
 // TODO: branches in subdirectories
 // TODO: write tests
 pub fn run(create_branch: bool, branch: &str) -> Result<()> {
-    let repo = Repository::from_path(Path::new(".git"))?;
+    let repo = Repository::from_path(Path::new("."))?;
     if create_branch {
         repo.create_branch(branch)?;
     }

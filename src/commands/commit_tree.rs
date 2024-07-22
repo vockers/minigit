@@ -1,9 +1,12 @@
+use std::path::Path;
+
 use anyhow::Result;
 
-use crate::object;
+use crate::{object, repository::Repository};
 
 pub fn run(tree_hash: &str, parent_hash: Option<&str>, message: &str) -> Result<()> {
-    let hash = object::write_commit(tree_hash, parent_hash, message)?;
+    let repo = Repository::from_path(Path::new("."))?;
+    let hash = object::write_commit(tree_hash, parent_hash, message, &repo)?;
 
     println!("{}", hash);
 
