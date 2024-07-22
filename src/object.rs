@@ -113,6 +113,7 @@ where
 
     /// Write the object to the objects directory of the repository (.git/objects)
     pub fn write_to_objects(self, repo: &Repository) -> Result<String> {
+        // Since hash is calculated during writing, we need to write to a temp file first
         let temp_file_path = repo.get_path().join("objects/.temp");
         let temp_file = fs::File::create(&temp_file_path)?;
         let hash = self.write(temp_file)?;

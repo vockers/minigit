@@ -6,7 +6,7 @@ use crate::repository::Repository;
 
 use super::{Object, ObjectType};
 
-/// Recursively write a tree object to the repository
+/// Recursively write a tree object to the repository.
 pub fn write_tree(path: &Path, repo: &Repository) -> Result<String> {
     let mut entries = vec![];
 
@@ -16,6 +16,7 @@ pub fn write_tree(path: &Path, repo: &Repository) -> Result<String> {
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
 
+        // Skip hidden files
         if name.starts_with(".") {
             continue;
         }

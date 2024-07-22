@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 
 use crate::{object::Object, repository::Repository};
 
+/// Compute the hash of a file and optionally write it to the objects directory.
 pub fn run(file: &Path, write: bool) -> Result<()> {
     let repo = Repository::from_path(Path::new("."))?;
     let object = Object::blob_from_file(file).context("failed to hash file")?;

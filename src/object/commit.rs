@@ -17,9 +17,11 @@ pub fn write_commit(
 
     writeln!(commit, "tree {}", tree_hash)?;
 
+    // Write parent hash if it exists
     if let Some(parent_hash) = parent_hash {
         writeln!(commit, "parent {}", parent_hash)?;
     }
+    // Read author and committer from environment variables, or me as default :)
     let (name, email) = env::var("NAME")
         .ok()
         .zip(env::var("EMAIL").ok())
@@ -29,6 +31,7 @@ pub fn write_commit(
                 String::from("vincentbockers@gmail.com"),
             )
         });
+    // Read the current time
     let time = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)?
         .as_secs();

@@ -4,6 +4,7 @@ use anyhow::Result;
 
 use crate::repository::Repository;
 
+/// Initialize a new Git repository.
 pub fn run(directory: Option<PathBuf>) -> Result<()> {
     let directory = if let Some(directory) = directory {
         env::current_dir()?.join(directory)

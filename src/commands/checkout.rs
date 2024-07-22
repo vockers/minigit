@@ -7,6 +7,7 @@ use crate::repository::Repository;
 // TODO: support detached HEAD
 // TODO: branches in subdirectories
 // TODO: write tests
+/// Switch branches and optionally create a new branch.
 pub fn run(create_branch: bool, branch: &str) -> Result<()> {
     let repo = Repository::from_path(Path::new("."))?;
     if create_branch {
