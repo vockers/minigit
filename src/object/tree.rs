@@ -2,9 +2,12 @@ use std::{fs, os::unix::fs::PermissionsExt, path::Path};
 
 use anyhow::Result;
 
+use crate::repository::Repository;
+
 use super::{Object, ObjectType};
 
-pub fn write_tree(path: &Path) -> Result<String> {
+/// Recursively write a tree object to the repository.
+pub fn write_tree(path: &Path, repo: &Repository) -> Result<String> {
     let mut entries = vec![];
 
     let dir = fs::read_dir(path)?;
@@ -13,6 +16,7 @@ pub fn write_tree(path: &Path) -> Result<String> {
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
 
+        // Skip hidden files
         if name.starts_with(".") {
             continue;
         }
@@ -22,9 +26,9 @@ pub fn write_tree(path: &Path) -> Result<String> {
         let hash = if meta.is_dir() {
             // Trees don't have bits for executable permissions
             mode = 0o40000;
-            write_tree(&path)?
+            write_tree(&path, &repo)?
         } else {
-            Object::blob_from_file(&path)?.write_to_objects()?
+            Object::blob_from_file(&path)?.write_to_objects(&repo)?
         };
 
         let hash = hex::decode(&hash)?;
@@ -47,7 +51,7 @@ pub fn write_tree(path: &Path) -> Result<String> {
         size: entries.len() as u64,
         reader: entries.as_slice(),
     };
-    Ok(object.write_to_objects()?)
+    Ok(object.write_to_objects(&repo)?)
 }
 
 #[cfg(test)]
@@ -61,11 +65,14 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let temp_dir_path = temp_dir.path().to_path_buf();
         init::run(Some(temp_dir_path.clone())).unwrap();
+
+        let repo = Repository::from_path(&temp_dir_path).unwrap();
+
         let foo_dir = temp_dir_path.join("foo");
         fs::create_dir(&foo_dir).unwrap();
         fs::write(foo_dir.join("bar"), "Hello Test\n").unwrap();
         fs::write(temp_dir_path.join("hello.txt"), "Hello World\n").unwrap();
-        let hash = write_tree(&temp_dir_path).unwrap();
+        let hash = write_tree(&temp_dir_path, &repo).unwrap();
         assert_eq!(hash, "817795ce05795f9aa7bc8b744d2c57b2cffcf15c");
     }
 }

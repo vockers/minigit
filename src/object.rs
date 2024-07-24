@@ -15,7 +15,7 @@ use anyhow::{Context, Result};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 use sha1::{Digest, Sha1};
 
-use crate::error::Error;
+use crate::{error::Error, repository::Repository};
 
 #[derive(Debug, PartialEq)]
 pub enum ObjectType {
@@ -25,6 +25,7 @@ pub enum ObjectType {
 }
 
 impl ObjectType {
+    /// Returns the mode of the object type
     pub fn from_mode(mode: u32) -> Result<Self> {
         let mode = mode / 1000;
         match mode {
@@ -56,8 +57,13 @@ pub struct Object<R> {
 
 impl Object<()> {
     // TODO: abbreviated hash
-    pub fn read(hash: &str) -> Result<Object<impl BufRead>> {
-        let object_path = format!(".git/objects/{}/{}", &hash[..2], &hash[2..]);
+    /// Returns an object from the objects directory of the repository (.git/objects)
+    pub fn read(hash: &str, repo: &Repository) -> Result<Object<impl BufRead>> {
+        let object_path = repo
+            .get_path()
+            .join("objects")
+            .join(&hash[..2])
+            .join(&hash[2..]);
         let f = fs::File::open(object_path).map_err(|_| Error::ObjectNotFound(hash.to_string()))?;
 
         let z = ZlibDecoder::new(f);
@@ -91,6 +97,7 @@ impl<R> Object<R>
 where
     R: Read,
 {
+    /// Write the object to a writer, returning the hash of the object
     pub fn write(mut self, writer: impl Write) -> Result<String> {
         let writer = ZlibEncoder::new(writer, Compression::default());
         let mut writer = HashWriter {
@@ -104,15 +111,15 @@ where
         Ok(hex::encode(hash))
     }
 
-    pub fn write_to_objects(self) -> Result<String> {
-        let temp_file = fs::File::create(".git/objects/.temp")?;
+    /// Write the object to the objects directory of the repository (.git/objects)
+    pub fn write_to_objects(self, repo: &Repository) -> Result<String> {
+        // Since hash is calculated during writing, we need to write to a temp file first
+        let temp_file_path = repo.get_path().join("objects/.temp");
+        let temp_file = fs::File::create(&temp_file_path)?;
         let hash = self.write(temp_file)?;
-        fs::create_dir_all(format!(".git/objects/{}/", &hash[..2]))
-            .context("create subdir of .git/objects")?;
-        fs::rename(
-            ".git/objects/.temp",
-            format!(".git/objects/{}/{}", &hash[..2], &hash[2..]),
-        )?;
+        let object_dir = repo.get_path().join("objects").join(&hash[..2]);
+        fs::create_dir_all(&object_dir).context("create subdir of .git/objects")?;
+        fs::rename(temp_file_path, object_dir.join(&hash[2..]))?;
 
         Ok(hash)
     }
@@ -139,12 +146,15 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use super::*;
 
     #[test]
     fn test_read_commit() {
+        let repo = Repository::from_path(Path::new(".")).unwrap();
         let hash = "defb1bfe50aa14da7248cc420d2a59c97ec8356c";
-        let object = Object::read(hash).unwrap();
+        let object = Object::read(hash, &repo).unwrap();
         let mut reader = BufReader::new(object.reader);
 
         let mut line = String::new();
@@ -162,8 +172,9 @@ mod tests {
 
     #[test]
     fn test_read_blob() {
+        let repo = Repository::from_path(Path::new(".")).unwrap();
         let hash = "ea8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba";
-        let object = Object::read(hash).unwrap();
+        let object = Object::read(hash, &repo).unwrap();
         let mut reader = BufReader::new(object.reader);
 
         let mut line = String::new();
