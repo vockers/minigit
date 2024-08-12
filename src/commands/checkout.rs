@@ -18,5 +18,5 @@ pub fn run(create_branch: bool, branch: &str) -> Result<()> {
 
     println!("Switched to branch '{}'", branch);
 
-    return Ok(());
+    Ok(())
 }

@@ -17,7 +17,7 @@ pub fn write_tree(path: &Path, repo: &Repository) -> Result<String> {
         let name = entry.file_name().to_string_lossy().to_string();
 
         // Skip hidden files
-        if name.starts_with(".") {
+        if name.starts_with('.') {
             continue;
         }
 
@@ -26,9 +26,9 @@ pub fn write_tree(path: &Path, repo: &Repository) -> Result<String> {
         let hash = if meta.is_dir() {
             // Trees don't have bits for executable permissions
             mode = 0o40000;
-            write_tree(&path, &repo)?
+            write_tree(&path, repo)?
         } else {
-            Object::blob_from_file(&path)?.write_to_objects(&repo)?
+            Object::blob_from_file(&path)?.write_to_objects(repo)?
         };
 
         let hash = hex::decode(&hash)?;
@@ -36,7 +36,7 @@ pub fn write_tree(path: &Path, repo: &Repository) -> Result<String> {
     }
 
     // Git stores entries in a tree in alphabetical order
-    entries.sort_by(|(_, a, _), (_, b, _)| a.cmp(&b));
+    entries.sort_by(|(_, a, _), (_, b, _)| a.cmp(b));
     // format: "<mode> <name>\0<hash>"
     let entries: Vec<u8> = entries
         .into_iter()
@@ -51,7 +51,8 @@ pub fn write_tree(path: &Path, repo: &Repository) -> Result<String> {
         size: entries.len() as u64,
         reader: entries.as_slice(),
     };
-    Ok(object.write_to_objects(&repo)?)
+
+    object.write_to_objects(repo)
 }
 
 #[cfg(test)]

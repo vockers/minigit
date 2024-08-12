@@ -46,6 +46,6 @@ pub fn write_commit(
         size: commit.len() as u64,
         reader: commit.as_bytes(),
     }
-    .write_to_objects(&repo)
+    .write_to_objects(repo)
     .context("write commit object")
 }

@@ -30,7 +30,7 @@ impl ObjectType {
         let mode = mode / 1000;
         match mode {
             100 => Ok(ObjectType::Blob),
-            040 => Ok(ObjectType::Tree),
+            40 => Ok(ObjectType::Tree),
             120 => Ok(ObjectType::Blob),
             160 => Ok(ObjectType::Commit),
             _ => anyhow::bail!("Unknown mode: {}", mode),
