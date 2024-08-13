@@ -4,10 +4,10 @@ use thiserror::Error;
 
 use crate::object::error::ObjectError;
 
-pub type Result<T> = std::result::Result<T, GitError>;
+pub type Result<T> = std::result::Result<T, RepoError>;
 
 #[derive(Error, Debug)]
-pub enum GitError {
+pub enum RepoError {
     #[error(transparent)]
     Io(#[from] io::Error),
 

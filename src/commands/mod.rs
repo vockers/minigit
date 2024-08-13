@@ -1,8 +1,3 @@
-use std::path::PathBuf;
-
-use anyhow::Result;
-use clap::Subcommand;
-
 pub mod branch;
 pub mod cat_file;
 pub mod checkout;
@@ -12,6 +7,11 @@ pub mod hash_object;
 pub mod init;
 pub mod ls_tree;
 pub mod write_tree;
+
+use std::path::PathBuf;
+
+use anyhow::Result;
+use clap::Subcommand;
 
 #[derive(Subcommand)]
 pub enum Commands {

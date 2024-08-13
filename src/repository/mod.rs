@@ -1,9 +1,11 @@
+pub mod error;
+
 use std::{
     fs,
     path::{Path, PathBuf},
 };
 
-use crate::error::{GitError, Result};
+use error::{RepoError, Result};
 
 pub struct Repository {
     dir: PathBuf,
@@ -14,7 +16,7 @@ impl Repository {
     pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
         let git_dir = path.as_ref().join(".git");
         if !git_dir.exists() {
-            Err(GitError::NotGitRepository)?;
+            Err(RepoError::NotGitRepository)?;
         }
 
         Ok(Self { dir: git_dir })
@@ -24,7 +26,7 @@ impl Repository {
     pub fn init(directory: &Path) -> Result<Repository> {
         let dir = directory.join(".git");
         if dir.exists() {
-            Err(GitError::AlreadyInitialized)?;
+            Err(RepoError::AlreadyInitialized)?;
         }
         fs::create_dir_all(dir.join("objects"))?;
         fs::create_dir_all(dir.join("refs"))?;
@@ -36,7 +38,7 @@ impl Repository {
     /// Creates a new branch with the given name.
     pub fn create_branch(&self, branch: &str) -> Result<()> {
         if self.branch_exists(branch)? {
-            Err(GitError::BranchAlreadyExists(branch.to_string()))?;
+            Err(RepoError::BranchAlreadyExists(branch.to_string()))?;
         }
 
         // Get the commit of the current HEAD and write it to the new branch
@@ -53,7 +55,7 @@ impl Repository {
     /// Switches to the branch with the given name.
     pub fn switch_branch(&self, branch: &str) -> Result<()> {
         if !self.branch_exists(branch)? {
-            Err(GitError::BranchNotFound(branch.to_string()))?;
+            Err(RepoError::BranchNotFound(branch.to_string()))?;
         }
         // Update HEAD to reference the new branch
         let branch_ref = format!("ref: refs/heads/{}\n", branch);
