@@ -13,8 +13,8 @@ pub struct Repository {
 
 impl Repository {
     /// Returns a new Repository instance from the given path.
-    pub fn from_path(path: &Path) -> Result<Self> {
-        let git_dir = path.join(".git");
+    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let git_dir = path.as_ref().join(".git");
         if !git_dir.exists() {
             Err(Error::NotGitRepository)?;
         }

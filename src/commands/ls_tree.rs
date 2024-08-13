@@ -1,7 +1,6 @@
 use std::{
     ffi::CStr,
     io::{BufRead, Read},
-    path::Path,
 };
 
 use anyhow::{bail, Context, Result};
@@ -13,7 +12,7 @@ use crate::{
 
 /// List the contents of a tree object.
 pub fn run(hash: &str, name_only: bool) -> Result<()> {
-    let repo = Repository::from_path(Path::new("."))?;
+    let repo = Repository::from_path(".")?;
     let mut tree = Object::read(hash, &repo)?;
     if tree.kind != ObjectType::Tree {
         bail!("Not a tree object");

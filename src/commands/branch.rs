@@ -3,7 +3,7 @@ use std::{fs, path::Path};
 use anyhow::{Context, Result};
 use colored::*;
 
-fn collect_entries(path: &Path, trim_path: &str) -> Result<Vec<String>> {
+fn collect_entries<P: AsRef<Path>>(path: P, trim_path: &str) -> Result<Vec<String>> {
     let mut entries = Vec::new();
     for entry in fs::read_dir(path)? {
         let entry = entry?;

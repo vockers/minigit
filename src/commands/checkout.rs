@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use anyhow::Result;
 
 use crate::repository::Repository;
@@ -9,7 +7,7 @@ use crate::repository::Repository;
 // TODO: write tests
 /// Switch branches and optionally create a new branch.
 pub fn run(create_branch: bool, branch: &str) -> Result<()> {
-    let repo = Repository::from_path(Path::new("."))?;
+    let repo = Repository::from_path(".")?;
     if create_branch {
         repo.create_branch(branch)?;
     }

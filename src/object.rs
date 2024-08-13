@@ -146,13 +146,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use super::*;
 
     #[test]
     fn test_read_commit() {
-        let repo = Repository::from_path(Path::new(".")).unwrap();
+        let repo = Repository::from_path(".").unwrap();
         let hash = "defb1bfe50aa14da7248cc420d2a59c97ec8356c";
         let object = Object::read(hash, &repo).unwrap();
         let mut reader = BufReader::new(object.reader);
@@ -172,7 +170,7 @@ mod tests {
 
     #[test]
     fn test_read_blob() {
-        let repo = Repository::from_path(Path::new(".")).unwrap();
+        let repo = Repository::from_path(".").unwrap();
         let hash = "ea8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba";
         let object = Object::read(hash, &repo).unwrap();
         let mut reader = BufReader::new(object.reader);
@@ -186,8 +184,7 @@ mod tests {
 
     #[test]
     fn test_get_hash_of_file() {
-        use std::path::Path;
-        let path = Path::new(".git/objects/ea/8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba");
+        let path = ".git/objects/ea/8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba";
         let object = Object::blob_from_file(&path).unwrap();
         let hash = Object::write(object, std::io::sink()).unwrap();
         assert_eq!(hash, "50421f06294fa5c8578c630ec50ae9be47279d58");

@@ -7,7 +7,7 @@ use crate::repository::Repository;
 use super::{Object, ObjectType};
 
 /// Recursively write a tree object to the repository.
-pub fn write_tree(path: &Path, repo: &Repository) -> Result<String> {
+pub fn write_tree<P: AsRef<Path>>(path: P, repo: &Repository) -> Result<String> {
     let mut entries = vec![];
 
     let dir = fs::read_dir(path)?;
@@ -26,9 +26,9 @@ pub fn write_tree(path: &Path, repo: &Repository) -> Result<String> {
         let hash = if meta.is_dir() {
             // Trees don't have bits for executable permissions
             mode = 0o40000;
-            write_tree(&path, repo)?
+            write_tree(path, repo)?
         } else {
-            Object::blob_from_file(&path)?.write_to_objects(repo)?
+            Object::blob_from_file(path)?.write_to_objects(repo)?
         };
 
         let hash = hex::decode(&hash)?;
