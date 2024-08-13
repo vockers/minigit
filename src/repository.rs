@@ -3,9 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{Context, Result};
-
-use crate::error::Error;
+use crate::error::{GitError, Result};
 
 pub struct Repository {
     dir: PathBuf,
@@ -16,7 +14,7 @@ impl Repository {
     pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
         let git_dir = path.as_ref().join(".git");
         if !git_dir.exists() {
-            Err(Error::NotGitRepository)?;
+            Err(GitError::NotGitRepository)?;
         }
 
         Ok(Self { dir: git_dir })
@@ -26,7 +24,7 @@ impl Repository {
     pub fn init(directory: &Path) -> Result<Repository> {
         let dir = directory.join(".git");
         if dir.exists() {
-            Err(Error::AlreadyInitialized)?;
+            Err(GitError::AlreadyInitialized)?;
         }
         fs::create_dir_all(dir.join("objects"))?;
         fs::create_dir_all(dir.join("refs"))?;
@@ -38,18 +36,16 @@ impl Repository {
     /// Creates a new branch with the given name.
     pub fn create_branch(&self, branch: &str) -> Result<()> {
         if self.branch_exists(branch)? {
-            Err(Error::BranchAlreadyExists(branch.to_string()))?;
+            Err(GitError::BranchAlreadyExists(branch.to_string()))?;
         }
 
         // Get the commit of the current HEAD and write it to the new branch
-        let head_ref = fs::read_to_string(self.dir.join("HEAD"))
-            .context("read HEAD")?
+        let head_ref = fs::read_to_string(self.dir.join("HEAD"))?
             .trim_start_matches("ref: ")
             .trim()
             .to_string();
-        let head_commit =
-            fs::read_to_string(self.dir.join(head_ref)).context("read commit of ref")?;
-        fs::write(self.dir.join("refs/heads").join(branch), head_commit).context("write branch")?;
+        let head_commit = fs::read_to_string(self.dir.join(head_ref))?;
+        fs::write(self.dir.join("refs/heads").join(branch), head_commit)?;
 
         Ok(())
     }
@@ -57,37 +53,39 @@ impl Repository {
     /// Switches to the branch with the given name.
     pub fn switch_branch(&self, branch: &str) -> Result<()> {
         if !self.branch_exists(branch)? {
-            Err(Error::BranchNotFound(branch.to_string()))?;
+            Err(GitError::BranchNotFound(branch.to_string()))?;
         }
         // Update HEAD to reference the new branch
         let branch_ref = format!("ref: refs/heads/{}\n", branch);
-        fs::write(self.dir.join("HEAD"), branch_ref).context("write HEAD")?;
+        fs::write(self.dir.join("HEAD"), branch_ref)?;
 
         Ok(())
     }
 
     /// Checks if a branch with the given name exists.
     pub fn branch_exists(&self, branch: &str) -> Result<bool> {
-        Ok(fs::read_dir(self.dir.join("refs/heads"))
-            .context("read branches")?
-            .filter_map(Result::ok)
-            .any(|entry| entry.file_name() == branch))
+        let entries = fs::read_dir(self.dir.join("refs/heads"))?;
+
+        let exists = entries
+            .filter_map(|e| e.ok())
+            .any(|entry| entry.file_name() == branch);
+
+        Ok(exists)
     }
 
     /// Returns the hash of the commit referenced by the given ref path.
     pub fn get_ref(&self, ref_path: &str) -> Result<String> {
-        fs::read_to_string(self.dir.join(ref_path)).context("read ref")
+        Ok(fs::read_to_string(self.dir.join(ref_path))?)
     }
 
     /// Sets the hash of the commit referenced by the given ref path.
     pub fn set_ref(&self, ref_path: &str, hash: &str) -> Result<()> {
-        fs::write(self.dir.join(ref_path), hash).context("write ref")
+        Ok(fs::write(self.dir.join(ref_path), hash)?)
     }
 
     /// Returns the ref path of the current HEAD.
     pub fn get_head(&self) -> Result<String> {
-        let head_ref = fs::read_to_string(self.dir.join("HEAD"))
-            .context("read HEAD")?
+        let head_ref = fs::read_to_string(self.dir.join("HEAD"))?
             .trim_start_matches("ref: ")
             .trim()
             .to_string();

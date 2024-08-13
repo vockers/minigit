@@ -1,21 +1,22 @@
 pub mod blob;
 pub mod commit;
+pub mod error;
 pub mod tree;
 
 pub use commit::write_commit;
 pub use tree::write_tree;
 
+use error::{ObjectError, Result};
 use std::{
     ffi::CStr,
     fs,
     io::{prelude::*, BufReader},
 };
 
-use anyhow::{Context, Result};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 use sha1::{Digest, Sha1};
 
-use crate::{error::Error, repository::Repository};
+use crate::repository::Repository;
 
 #[derive(Debug, PartialEq)]
 pub enum ObjectType {
@@ -33,7 +34,23 @@ impl ObjectType {
             40 => Ok(ObjectType::Tree),
             120 => Ok(ObjectType::Blob),
             160 => Ok(ObjectType::Commit),
-            _ => anyhow::bail!("Unknown mode: {}", mode),
+            _ => Err(ObjectError::UnknownMode(mode)),
+        }
+    }
+}
+
+impl TryFrom<&str> for ObjectType {
+    type Error = ObjectError;
+
+    fn try_from(value: &str) -> Result<Self> {
+        match value {
+            "blob" => Ok(ObjectType::Blob),
+            "tree" => Ok(ObjectType::Tree),
+            "commit" => Ok(ObjectType::Commit),
+            _ => Err(ObjectError::Other(format!(
+                "Unknown object type: {}",
+                value
+            ))),
         }
     }
 }
@@ -64,28 +81,26 @@ impl Object<()> {
             .join("objects")
             .join(&hash[..2])
             .join(&hash[2..]);
-        let f = fs::File::open(object_path).map_err(|_| Error::ObjectNotFound(hash.to_string()))?;
+        let f = fs::File::open(object_path).map_err(|_| ObjectError::NotFound(hash.to_string()))?;
 
         let z = ZlibDecoder::new(f);
         let mut z = BufReader::new(z);
         let mut buf = Vec::new();
-        z.read_until(0, &mut buf)
-            .context("read header from .git/objects file")?;
+        z.read_until(0, &mut buf)?;
         let header = CStr::from_bytes_with_nul(&buf)
-            .context("Failed to read header")?
+            .map_err(|_| ObjectError::Parse(hash.to_string()))?
             .to_str()
-            .context(".git/objects file header isn't valid UTF-8")?;
+            .map_err(|_| ObjectError::Parse(hash.to_string()))?;
 
-        let (kind, size) = header.split_once(' ').context("Failed to parse header")?;
+        let (kind, size) = header
+            .split_once(' ')
+            .ok_or(ObjectError::Parse(hash.to_string()))?;
 
-        let kind = match kind {
-            "blob" => ObjectType::Blob,
-            "tree" => ObjectType::Tree,
-            "commit" => ObjectType::Commit,
-            _ => anyhow::bail!("Unknown object kind: {}", kind),
-        };
+        let kind = ObjectType::try_from(kind)?;
 
-        let size = size.parse::<u64>().context("Failed to parse size")?;
+        let size = size
+            .parse::<u64>()
+            .map_err(|_| ObjectError::Parse(hash.to_string()))?;
 
         let reader = z.take(size);
 
@@ -105,7 +120,7 @@ where
             hasher: Sha1::new(),
         };
         write!(writer, "{} {}\0", self.kind, self.size)?;
-        std::io::copy(&mut self.reader, &mut writer).context("stream file into blob")?;
+        std::io::copy(&mut self.reader, &mut writer)?;
         writer.writer.finish()?;
         let hash = writer.hasher.finalize();
         Ok(hex::encode(hash))
@@ -118,7 +133,7 @@ where
         let temp_file = fs::File::create(&temp_file_path)?;
         let hash = self.write(temp_file)?;
         let object_dir = repo.get_path().join("objects").join(&hash[..2]);
-        fs::create_dir_all(&object_dir).context("create subdir of .git/objects")?;
+        fs::create_dir_all(&object_dir)?;
         fs::rename(temp_file_path, object_dir.join(&hash[2..]))?;
 
         Ok(hash)

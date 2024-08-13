@@ -1,10 +1,11 @@
 use std::{fs, os::unix::fs::PermissionsExt, path::Path};
 
-use anyhow::Result;
-
 use crate::repository::Repository;
 
-use super::{Object, ObjectType};
+use super::{
+    error::{ObjectError, Result},
+    Object, ObjectType,
+};
 
 /// Recursively write a tree object to the repository.
 pub fn write_tree<P: AsRef<Path>>(path: P, repo: &Repository) -> Result<String> {
@@ -31,7 +32,8 @@ pub fn write_tree<P: AsRef<Path>>(path: P, repo: &Repository) -> Result<String> 
             Object::blob_from_file(path)?.write_to_objects(repo)?
         };
 
-        let hash = hex::decode(&hash)?;
+        let hash =
+            hex::decode(&hash).map_err(|_| ObjectError::Other("invalid hash".to_string()))?;
         entries.push((mode, name, hash));
     }
 
